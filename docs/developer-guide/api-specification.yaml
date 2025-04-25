@@ -1,0 +1,317 @@
+openapi: 3.0.3
+info:
+  title: NextGen MedTech Platform API
+  version: '2026.1'
+  description: |
+    Complete API documentation for the NextGen MedTech Platform microservices.
+    Includes authentication, tenant management, patient care, and clinical operations.
+
+servers:
+  - url: https://{tenant}.api.nextgenmedtech.com/v1
+    variables:
+      tenant:
+        default: demo
+        description: Tenant subdomain
+
+security:
+  - BearerAuth: []
+  - OAuth2: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.nextgenmedtech.com/oauth/authorize
+          tokenUrl: https://auth.nextgenmedtech.com/oauth/token
+          scopes:
+            read: Read access
+            write: Write access
+            admin: Admin access
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [AUTH_ERROR, VALIDATION_ERROR, NOT_FOUND, SERVER_ERROR]
+        message:
+          type: string
+        details:
+          type: object
+
+    Tenant:
+      type: object
+      required: [name, slug, type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        domain:
+          type: string
+          format: hostname
+        type:
+          type: string
+          enum: [Doctor, Clinic, MultiClinic, Hospital]
+        theme:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Patient:
+      type: object
+      required: [firstName, lastName, dateOfBirth]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female, other, prefer_not_to_say]
+        contactInfo:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+              pattern: '^\\+[1-9]\\d{1,14}$'
+            address:
+              type: object
+              properties:
+                street:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                postalCode:
+                  type: string
+
+    Appointment:
+      type: object
+      required: [patientId, providerId, scheduledTime]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        providerId:
+          type: string
+          format: uuid
+        scheduledTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, confirmed, cancelled, completed]
+        notes:
+          type: string
+
+    Invoice:
+      type: object
+      required: [patientId, amount, currency]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+          minimum: 0
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        status:
+          type: string
+          enum: [draft, sent, paid, cancelled]
+        cptCodes:
+          type: array
+          items:
+            type: string
+            pattern: '^\\d{5}$'
+        icdCodes:
+          type: array
+          items:
+            type: string
+            pattern: '^[A-Z]\\d{2}(\\.\\d{1,2})?$'
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user
+      operationId: login
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+
+  /tenants:
+    post:
+      summary: Create new tenant
+      operationId: createTenant
+      tags: [Tenant Management]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tenant'
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+
+  /patients:
+    get:
+      summary: List patients
+      operationId: listPatients
+      tags: [Patient Management]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Patient'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      pages:
+                        type: integer
+                      current:
+                        type: integer
+
+  /appointments:
+    post:
+      summary: Schedule appointment
+      operationId: createAppointment
+      tags: [Appointments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+      responses:
+        '201':
+          description: Appointment scheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+
+  /billing/invoices:
+    post:
+      summary: Create invoice
+      operationId: createInvoice
+      tags: [Billing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+      responses:
+        '201':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Tenant Management
+    description: Multi-tenant operations
+  - name: Patient Management
+    description: Patient data management
+  - name: Appointments
+    description: Appointment scheduling
+  - name: Billing
+    description: Billing and invoicing

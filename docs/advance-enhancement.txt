@@ -1,0 +1,151 @@
+Microservices Structure
+API Gateway: Envoy with integrated Swagger documentation for each service (enabled in development mode).​
+Mulesoft
+
+Authentication & Authorization: OAuth2/OIDC compliant service using IdentityServer4, supporting multi-tenant RBAC.​
+
+Tenant Management: Handles onboarding, branding, domain mapping, and role assignments.​
+
+Patient & Provider Directory: Manages CRUD operations for patients, doctors, and staff with customizable profiles.​
+
+Scheduling & Appointments: Provides calendar UI, self-booking portal, and reminders.​
+
+Clinical Pathway Engine: Low-code workflow editor with rule evaluation capabilities.​
+
+Federated Learning Service: Orchestrates model training across tenant data without centralizing PHI.​
+
+Resource Optimization: Real-time event processing with constraint-solving algorithms.​
+Microsoft Learn
++1
+Mulesoft
++1
+
+AR Telemedicine: WebRTC video, AR overlays, and IoT data ingestion for remote diagnostics.​
+
+Billing & Invoicing: Supports CPT/ICD codes, insurance claims, and multi-currency transactions.​
+
+Reporting & Analytics: Dashboards, ad-hoc reports, and data exports.​
+
+Blockchain Audit & Consent: Immutable ledger with smart-contract-based consent rules.​
+
+Digital Twin Simulator: Data ingestion, simulation engine, and scenario analysis.​
+
+Plugin Marketplace: Registry for UI and backend extensions, supporting independent management.​
+
+Theme Service: APIs for theme CRUD operations, versioning, and preview environments.​
+
+Exception Intelligence Module: Logs unhandled exceptions, session replays, and alerts via WebSockets.​
+
+🗄️ Data Storage
+PostgreSQL: Schema-per-tenant for core data isolation.​
+
+MongoDB: Stores dynamic plugin and UI data.​
+
+Redis: Caching and message queuing.​
+
+ClickHouse: High-performance analytics.​
+Mulesoft
++1
+ACTIMI Digitaler Datenaustausch nach MDR
++1
+
+S3 / MinIO: Asset storage.​
+
+Neo4j: Workflow graph storage.​
+Healthcare Integration Engine
++2
+Oracle Documentation
++2
+Mulesoft
++2
+
+🔐 Security & Compliance
+Service Mesh: Istio for mTLS, retries, and circuit breaking.​
+
+Secrets Management: Vault for managing secrets and certificates.​
+
+Compliance: HIPAA/GDPR compliant, with encrypted data at rest and in transit.​
+
+📂 Directory Structure
+plaintext
+Copy
+Edit
+/nextgen-medtech
+├── /backend
+│   ├── /api-gateway
+│   ├── /auth-service
+│   ├── /tenant-management
+│   ├── /patient-directory
+│   ├── /scheduling
+│   ├── /clinical-pathway
+│   ├── /federated-learning
+│   ├── /resource-optimization
+│   ├── /telemedicine
+│   ├── /billing
+│   ├── /analytics
+│   ├── /blockchain-audit
+│   ├── /digital-twin
+│   ├── /plugin-marketplace
+│   ├── /theme-service
+│   ├── /exception-intelligence
+│   └── /shared-libraries
+├── /docs
+│   ├── /developer-guide
+│   ├── /api-reference
+│   ├── /plugin-sdk
+│   ├── /theme-sdk
+│   └── /onboarding
+├── /infrastructure
+│   ├── /k8s
+│   ├── /helm
+│   └── /scripts
+└── docker-compose.yml
+🧾 Database Schema (PostgreSQL - Schema-per-Tenant)
+patients Table
+sql
+Copy
+Edit
+CREATE TABLE patients (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    date_of_birth DATE,
+    gender VARCHAR(10),
+    contact_info JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+appointments Table
+sql
+Copy
+Edit
+CREATE TABLE appointments (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    patient_id UUID REFERENCES patients(id),
+    provider_id UUID,
+    appointment_time TIMESTAMP,
+    status VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+Note: Each tenant has its own schema, ensuring data isolation and security.​
+
+📄 API Documentation
+Swagger UI: Integrated for each microservice, accessible via the API Gateway.​
+
+Postman Collection: A comprehensive collection covering all endpoints is available in the /docs/api-reference directory.​
+
+🧪 Testing & Quality Assurance
+Unit Tests: Implemented using xUnit for .NET Core services.​
+
+Integration Tests: Utilize TestContainers for spinning up dependent services.​
+
+End-to-End Tests: Cypress tests for frontend interactions.​
+
+Continuous Integration: GitHub Actions workflows for automated testing and deployment.​
+
+🚀 Deployment & DevOps
+Containerization: Docker images for each microservice.
